@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, Depends
 from pydantic import BaseModel
 from typing import List, Dict
 from datetime import datetime
@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import select
 from models import Employee
-from database import SessionLocal
+from database import SessionLocal, get_db
 
 
 from mock_sources import fake_data_sources
@@ -60,13 +60,6 @@ def connect_source(source: Source):
         }
     )
     return {"message": f"{source.name} connected successfully"}
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @app.get("/get-data")
 def get_data():
