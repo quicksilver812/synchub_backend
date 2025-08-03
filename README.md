@@ -44,13 +44,13 @@ Think of it as your data pipeline brain that cleans up incoming chaos into struc
 
 ## Completed Milestones
 
-### Week 1: Foundation
+### Day 1: Foundation
 - Basic FastAPI setup
 - Connected mock data sources
 - Created unified schema
 - Implemented hardcoded field mapping
 
-### Week 2: LLM Mapping + CSV + DB
+### Day 2: LLM Mapping + CSV + DB
 - Replaced hardcoded mapping with LLM-based dynamic mapping
 - Integrated Ollama LLM (LangChain interface)
 - Parsed CSV headers and allowed dynamic source connections
@@ -58,8 +58,6 @@ Think of it as your data pipeline brain that cleans up incoming chaos into struc
 - Added SQLite persistence with SQLAlchemy
 - Prevented duplicates with upsert logic
 - Implemented `/employees` route for final normalized output
-
-### Week 3: Wrap-up
 - Thorough testing of all routes (LLM-based, CSV upload, DB sync)
 - Verified deduplication and idempotency
 - Polished and documented current implementation
@@ -68,7 +66,7 @@ Think of it as your data pipeline brain that cleans up incoming chaos into struc
 
 ## Upcoming Milestones
 
-### Week 4: Natural Language Query Layer
+### Day 3: Natural Language Query Layer
 - Build a LangGraph-based agent to handle user questions
 - Use LLM to translate natural language to SQL queries
 - Support questions like:
