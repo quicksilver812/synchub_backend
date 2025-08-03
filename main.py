@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File, Depends
+from fastapi import FastAPI, HTTPException, UploadFile, File, Depends, Form
 from pydantic import BaseModel
 from typing import List, Dict
 from datetime import datetime
@@ -9,6 +9,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import select
 from models import Employee
 from database import SessionLocal, get_db
+import csv
+import io
 
 
 from mock_sources import fake_data_sources
@@ -124,41 +126,39 @@ def get_field_mapping(source_name: str):
         raise HTTPException(status_code=500, detail=f"Mapping failed: {str(e)}")
     
 @app.post("/upload-csv")
-async def upload_csv(file: UploadFile = File(...)):
-    if not file.filename.endswith(".csv"):
-        raise HTTPException(status_code=400, detail="Only CSV files are supported.")
-    
-    # Read CSV content
-    contents = await file.read()
-    df = pd.read_csv(StringIO(contents.decode("utf-8")))
+async def upload_csv(source_name: str = Form(...), file: UploadFile = File(...), db: Session = Depends(get_db)):
+    if file.content_type != 'text/csv':
+        raise HTTPException(status_code=400, detail="Only CSV files are allowed")
 
-    fields = df.columns.tolist()
-    try:
-        mapping = get_dynamic_field_mapping("UploadedCSV", fields)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get field mapping: {str(e)}")
-    
-    unified_records = []
-    for _, row in df.iterrows():
-        record = row.to_dict()
+    content = await file.read()
+    decoded = content.decode('utf-8')
+    reader = csv.DictReader(io.StringIO(decoded))
+    rows = list(reader)
+
+    if not rows:
+        raise HTTPException(status_code=400, detail="CSV is empty")
+
+    field_mapping = get_dynamic_field_mapping(source_name, list(rows[0].keys()))
+
+    saved = 0
+    for record in rows:
         unified_kwargs = {}
-        for src_field, unified_field in mapping.items():
-            value = record.get(src_field)
-            # Ensure employee_id is a string
-            if unified_field == "employee_id" and value is not None:
-                value = str(value)
-            unified_kwargs[unified_field] = value
-        
-        try:
-            unified = UnifiedEmployee(**unified_kwargs)
-            unified_records.append(unified.model_dump())
-        except Exception as e:
-            print(f"Failed to normalize row: {record}, Error: {e}")
-    
-    return {
-        "mapped_fields": mapping,
-        "unified_records": unified_records
-    }
+        for src_field, unified_field in field_mapping.items():
+            unified_kwargs[unified_field] = record.get(src_field)
+
+        employee = Employee(**unified_kwargs)
+
+        # Upsert logic
+        existing = db.query(Employee).filter_by(employee_id=employee.employee_id).first()
+        if existing:
+            for key, value in unified_kwargs.items():
+                setattr(existing, key, value)
+        else:
+            db.add(employee)
+        saved += 1
+
+    db.commit()
+    return {"message": f"{saved} records processed and saved from {source_name}"}
 
 @app.get("/employees")
 def list_employees(db: Session = Depends(get_db)):
