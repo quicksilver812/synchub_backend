@@ -1,7 +1,9 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from typing import List, Dict
 from datetime import datetime
+import pandas as pd
+from io import StringIO
 
 from mock_sources import fake_data_sources
 from schema import UnifiedEmployee
@@ -90,3 +92,40 @@ def get_field_mapping(source_name: str):
         return {"source": source_name, "field_mapping": mapping}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Mapping failed: {str(e)}")
+    
+@app.post("/upload-csv")
+async def upload_csv(file: UploadFile = File(...)):
+    if not file.filename.endswith(".csv"):
+        raise HTTPException(status_code=400, detail="Only CSV files are supported.")
+    
+    # Read CSV content
+    contents = await file.read()
+    df = pd.read_csv(StringIO(contents.decode("utf-8")))
+
+    fields = df.columns.tolist()
+    try:
+        mapping = get_dynamic_field_mapping("UploadedCSV", fields)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get field mapping: {str(e)}")
+    
+    unified_records = []
+    for _, row in df.iterrows():
+        record = row.to_dict()
+        unified_kwargs = {}
+        for src_field, unified_field in mapping.items():
+            value = record.get(src_field)
+            # Ensure employee_id is a string
+            if unified_field == "employee_id" and value is not None:
+                value = str(value)
+            unified_kwargs[unified_field] = value
+        
+        try:
+            unified = UnifiedEmployee(**unified_kwargs)
+            unified_records.append(unified.model_dump())
+        except Exception as e:
+            print(f"Failed to normalize row: {record}, Error: {e}")
+    
+    return {
+        "mapped_fields": mapping,
+        "unified_records": unified_records
+    }

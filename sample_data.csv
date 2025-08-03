@@ -1,0 +1,4 @@
+id,name,sal,email_id,dept,work_location
+101,Ramesh,12000,ramesh@example.com,Engineering,Bangalore
+102,Sita,10000,sita@example.com,HR,Hyderabad
+103,Laxman,11000,laxman@example.com,Finance,Pune

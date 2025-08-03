@@ -5,3 +5,5 @@ python-dotenv
 langchain
 langchain_ollama
 langchain_openai
+pandas 
+python-multipart
