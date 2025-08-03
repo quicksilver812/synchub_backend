@@ -78,3 +78,15 @@ def get_normalised_data():
                 print(f"Failed to normalize from {source_name}: {e}")
     
     return {"normalized_records": all_records}
+
+@app.get("/field-mapping/{source_name}")
+def get_field_mapping(source_name: str):
+    if source_name not in fake_data_sources:
+        raise HTTPException(status_code=404, detail="Source not found.")
+    
+    sample_record = fake_data_sources[source_name][0]
+    try:
+        mapping = get_dynamic_field_mapping(source_name, list(sample_record.keys()))
+        return {"source": source_name, "field_mapping": mapping}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Mapping failed: {str(e)}")
