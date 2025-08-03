@@ -5,6 +5,7 @@ from datetime import datetime
 
 from mock_sources import fake_data_sources
 from schema import UnifiedEmployee
+from field_mapper import fake_field_mappings
 
 app = FastAPI()
 
@@ -16,27 +17,14 @@ class Source(BaseModel):
     name: str # e.g. FakeSAP, FakeWorkday
 
 def normalise_employee_record(record:dict, source_name:str) -> UnifiedEmployee:
-    if source_name == "FakeSAP":
-        return UnifiedEmployee(
-            employee_id=record["emp_id"],
-            name=record["emp_name"],
-            salary=record.get("emp_sal"),
-            email=record.get("emp_email_id"),
-            department=record.get("emp_dept"),
-            location=record.get("emp_work_location")
-        )
+    
+    field_map = fake_field_mappings[source_name]
 
-    elif source_name == "FakeWorkday":
-        return UnifiedEmployee(
-            employee_id=record["id"],
-            name=record["name"],
-            salary=record.get("sal"),
-            email=record.get("email_id"),
-            department=record.get("dept"),
-            location=record.get("work_location")
-        )
-    else:
-        return ValueError("Unknown Source")
+    unified_kwargs = {}
+    for src_field, unified_field in field_map.items():
+        unified_kwargs[unified_field] = record.get(src_field)
+
+    return UnifiedEmployee(**unified_kwargs)
 
 # --- Routes ---
 @app.get("/")
