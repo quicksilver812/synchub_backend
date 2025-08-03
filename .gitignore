@@ -4,3 +4,4 @@ __pycache__/
 myenv/
 .idea/
 *.sqlite3
+employees.db
