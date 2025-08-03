@@ -65,3 +65,16 @@ def get_data():
 @app.get("/list-connected-sources")
 def list_sources():
     return {"connected_sources": connected_sources}
+
+@app.get("/normalised-data")
+def get_normalised_data():
+    all_records = []
+    for source_name, records in fake_data_sources.items():
+        for record in records:
+            try:
+                unified = normalise_employee_record(record, source_name)
+                all_records.append(unified.model_dump())
+            except Exception as e:
+                print(f"Failed to normalize from {source_name}: {e}")
+    
+    return {"normalized_records": all_records}
