@@ -4,12 +4,21 @@ from typing import List, Dict
 from datetime import datetime
 import pandas as pd
 from io import StringIO
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import select
+from models import Employee
+from database import SessionLocal
+
 
 from mock_sources import fake_data_sources
 from schema import UnifiedEmployee
 from field_mapper import fake_field_mappings
 from llm_mapper import get_dynamic_field_mapping
+from database import SessionLocal, engine
+from models import Employee
 
+Employee.metadata.create_all(bind=engine)
 app = FastAPI()
 
 # In-memory storage for now
@@ -52,17 +61,45 @@ def connect_source(source: Source):
     )
     return {"message": f"{source.name} connected successfully"}
 
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 @app.get("/get-data")
 def get_data():
     all_data = []
+    db: Session = next(get_db())
+
     for source in connected_sources:
         src_name = source["name"]
         source_data = fake_data_sources[src_name]
 
         for record in source_data:
             unified = normalise_employee_record(record, src_name)
-            all_data.append(unified.model_dump())
+            data = unified.model_dump()
+
+            existing = db.scalar(select(Employee).where(Employee.employee_id == data["employee_id"]))
+
+            if existing:
+                for key, value in data.items():
+                    setattr(existing, key, value)
+            else:
+                new_emp = Employee(**data)
+                db.add(new_emp)
+
+            all_data.append(data)
+
+    try:
+        db.commit()
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
+
     return {"sources_connected": connected_sources, "data": all_data}
+
 
 @app.get("/list-connected-sources")
 def list_sources():

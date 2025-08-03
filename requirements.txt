@@ -7,3 +7,5 @@ langchain_ollama
 langchain_openai
 pandas 
 python-multipart
+sqlalchemy 
+aiosqlite
