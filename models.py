@@ -11,3 +11,13 @@ class Employee(Base):
     email = Column(String, nullable=True)
     department = Column(String, nullable=True)
     location = Column(String, nullable=True)
+
+    def to_dict(self):
+        return {
+            "employee_id": self.employee_id,
+            "name": self.name,
+            "salary": self.salary,
+            "email": self.email,
+            "department": self.department,
+            "location": self.location,
+        }

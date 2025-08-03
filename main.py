@@ -159,3 +159,11 @@ async def upload_csv(file: UploadFile = File(...)):
         "mapped_fields": mapping,
         "unified_records": unified_records
     }
+
+@app.get("/employees")
+def list_employees(db: Session = Depends(get_db)):
+    try:
+        employees = db.query(Employee).all()
+        return {"count": len(employees), "employees": [e.to_dict() for e in employees]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
