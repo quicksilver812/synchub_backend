@@ -6,6 +6,7 @@ from datetime import datetime
 from mock_sources import fake_data_sources
 from schema import UnifiedEmployee
 from field_mapper import fake_field_mappings
+from llm_mapper import get_dynamic_field_mapping
 
 app = FastAPI()
 
@@ -17,8 +18,10 @@ class Source(BaseModel):
     name: str # e.g. FakeSAP, FakeWorkday
 
 def normalise_employee_record(record:dict, source_name:str) -> UnifiedEmployee:
+
+    field_map = get_dynamic_field_mapping(source_name, list[record.keys()])
     
-    field_map = fake_field_mappings[source_name]
+    # field_map = fake_field_mappings[source_name]
 
     unified_kwargs = {}
     for src_field, unified_field in field_map.items():

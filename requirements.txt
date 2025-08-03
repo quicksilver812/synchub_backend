@@ -3,4 +3,4 @@ uvicorn
 pydantic
 python-dotenv
 langchain
-openai
+langchain_ollama
