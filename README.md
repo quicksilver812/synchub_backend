@@ -33,31 +33,47 @@ Think of it as your data pipeline brain that cleans up incoming chaos into struc
 |--------|----------|-------------|
 | `GET` | `/` | Health check |
 | `POST` | `/connect-source` | Connects a source like `FakeSAP`, `FakeWorkday`, or CSV |
-| `GET` | `/get-data` | Returns normalized data from connected sources |
 | `GET` | `/list-connected-sources` | Lists all currently connected sources |
-| `GET` | `/normalised-data` | Normalizes all sources, not just the connected ones |
+| `GET` | `/get-data` | Returns normalized data from connected sources and persists them |
+| `GET` | `/normalised-data` | Normalizes all sources without storing |
+| `GET` | `/field-mapping/{source_name}` | Shows dynamic field mapping for a given source |
+| `POST` | `/upload-csv` | Upload CSV and normalize + store its data |
+| `GET` | `/employees` | Returns all employees from the database |
 
 ---
 
 ## Completed Milestones
 
-### Day 1: Foundation
+### Week 1: Foundation
 - Basic FastAPI setup
 - Connected mock data sources
 - Created unified schema
 - Implemented hardcoded field mapping
 
-### Day 2: LLM Mapping + CSV
+### Week 2: LLM Mapping + CSV + DB
 - Replaced hardcoded mapping with LLM-based dynamic mapping
 - Integrated Ollama LLM (LangChain interface)
 - Parsed CSV headers and allowed dynamic source connections
 - Built endpoints for data access and transformation
+- Added SQLite persistence with SQLAlchemy
+- Prevented duplicates with upsert logic
+- Implemented `/employees` route for final normalized output
 
-## Upcoming Milestone
+### Week 3: Wrap-up
+- Thorough testing of all routes (LLM-based, CSV upload, DB sync)
+- Verified deduplication and idempotency
+- Polished and documented current implementation
 
-### Day 3:
-- Store normalized data in SQLite or Postgres
-- Filter and query employees (by name, salary range, etc.)
-- Analytics / aggregation layer
-- Add source-specific configurations
-- Simple frontend dashboard (optional)
+---
+
+## Upcoming Milestones
+
+### Week 4: Natural Language Query Layer
+- Build a LangGraph-based agent to handle user questions
+- Use LLM to translate natural language to SQL queries
+- Support questions like:
+  - "How many employees joined after Jan 2024?"
+  - "Show employees in the Marketing department"
+- Add `/ask` endpoint for querying employee data with natural language
+- Integrate SQLite with LangChain's SQL agent
+- Return results in conversational format
