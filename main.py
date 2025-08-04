@@ -182,10 +182,18 @@ def ask_question(request: AskRequest):
         raise HTTPException(status_code=400, detail="Empty question")
 
     try:
-        response = sql_agent.invoke(question)
+        # Raw SQL response from agent
+        raw_answer = sql_agent.invoke(question)
+        
+        # Try formatting the output
+        if isinstance(raw_answer, str):
+            formatted = raw_answer.strip()
+        else:
+            formatted = str(raw_answer)
+        
         return {
             "question": question,
-            "answer": response
+            "answer": formatted
         }
     except Exception as e:
         return {

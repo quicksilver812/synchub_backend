@@ -12,6 +12,12 @@ load_dotenv()
 # Make sure this path points to your existing SQLite DB file
 sqlite_db_path = "sqlite:///./employees.db"
 
+system_prompt = """
+You are a helpful assistant that answers questions about employee data using SQL.
+
+Always try to generate a SQL query, even if you're unsure. Never respond with "I don't know".
+"""
+
 # Setup LangChain LLM
 llm = ChatOpenAI(model="gpt-4o-mini") 
 
@@ -23,4 +29,6 @@ sql_agent = create_sql_agent(
     llm=llm,
     toolkit=SQLDatabaseToolkit(db=db, llm=llm),
     verbose=True,
+    handle_parsing_errors=True,  # Add this argument
+    prefix=system_prompt
 )
