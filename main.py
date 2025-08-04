@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File, Depends, Form
+from fastapi import FastAPI, HTTPException, UploadFile, File, Depends, Form, Body
 from pydantic import BaseModel
 from typing import List, Dict
 from datetime import datetime
@@ -69,6 +69,20 @@ def connect_source(source: Source):
         }
     )
     return {"message": f"{source.name} connected successfully"}
+
+@app.delete("/disconnect-source")
+def disconnect_source(source: Source = Body(...)):
+    global connected_sources
+    initial_count = len(connected_sources)
+
+    connected_sources = [
+        s for s in connected_sources if s["name"] != source.name
+    ]
+
+    if len(connected_sources) == initial_count:
+        raise HTTPException(status_code=404, detail=f"{source.name} was not connected.")
+    
+    return {"message": f"{source.name} disconnected successfully"}
 
 @app.get("/get-data")
 def get_data():
