@@ -9,6 +9,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import select
 from models import Employee
 from database import SessionLocal, get_db
+from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.runnables import Runnable
 import csv
 import io
 
@@ -19,6 +21,7 @@ from field_mapper import fake_field_mappings
 from llm_mapper import get_dynamic_field_mapping
 from database import SessionLocal, engine
 from models import Employee
+from agent import sql_agent
 
 Employee.metadata.create_all(bind=engine)
 app = FastAPI()
@@ -29,6 +32,9 @@ connected_sources = []
 # --- Models ---
 class Source(BaseModel):
     name: str # e.g. FakeSAP, FakeWorkday
+
+class AskRequest(BaseModel):
+    question: str
 
 def normalise_employee_record(record:dict, source_name:str) -> UnifiedEmployee:
 
@@ -167,3 +173,22 @@ def list_employees(db: Session = Depends(get_db)):
         return {"count": len(employees), "employees": [e.to_dict() for e in employees]}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+@app.post("/ask")
+def ask_question(request: AskRequest):
+    question = request.question.strip()
+    
+    if not question:
+        raise HTTPException(status_code=400, detail="Empty question")
+
+    try:
+        response = sql_agent.invoke(question)
+        return {
+            "question": question,
+            "answer": response
+        }
+    except Exception as e:
+        return {
+            "question": question,
+            "error": str(e)
+        }
