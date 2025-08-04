@@ -20,9 +20,10 @@ from schema import UnifiedEmployee
 from field_mapper import fake_field_mappings
 from llm_mapper import get_dynamic_field_mapping
 from database import SessionLocal, engine
-from models import Employee
+from models import Employee, QALog
 from agent import sql_agent
 
+QALog.metadata.create_all(bind=engine)
 Employee.metadata.create_all(bind=engine)
 app = FastAPI()
 
@@ -175,7 +176,7 @@ def list_employees(db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
     
 @app.post("/ask")
-def ask_question(request: AskRequest):
+def ask_question(request: AskRequest, db: Session = Depends(get_db)):
     question = request.question.strip()
     
     if not question:
@@ -185,18 +186,40 @@ def ask_question(request: AskRequest):
         # Raw SQL response from agent
         raw_answer = sql_agent.invoke(question)
         
-        # Try formatting the output
+        # Format output
         if isinstance(raw_answer, str):
             formatted = raw_answer.strip()
         else:
             formatted = str(raw_answer)
-        
+
+        # Log to DB
+        log = QALog(question=question, answer=formatted)
+        db.add(log)
+        db.commit()
+        db.refresh(log)
+
         return {
             "question": question,
             "answer": formatted
         }
+
     except Exception as e:
         return {
             "question": question,
             "error": str(e)
         }
+    
+@app.get("/logs")
+def get_logs(db: Session = Depends(get_db)):
+    logs = db.query(QALog).order_by(QALog.asked_at.desc()).limit(20).all()
+    return {
+        "logs": [
+            {
+                "id": log.id,
+                "question": log.question,
+                "answer": log.answer,
+                "asked_at": log.asked_at
+            }
+            for log in logs
+        ]
+    }

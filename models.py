@@ -1,5 +1,14 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, DateTime, func
 from database import Base
+
+
+class QALog(Base):
+    __tablename__ = "qa_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    question = Column(String, nullable=False)
+    answer = Column(String, nullable=False)
+    asked_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class Employee(Base):
     __tablename__ = "employees"
