@@ -74,12 +74,13 @@ Think of it as your data pipeline brain that cleans up incoming chaos into struc
 
 ## Upcoming Milestones
 
-### Day 4
-- Add filters and query parameters for `/employees` (e.g., by department, salary range)
-- Add analytics endpoints (e.g., headcount, average salary)
-- Integrate basic frontend dashboard (optional)
-- Add authentication and multi-user support (optional)
-- Store Q&A history with user context or memory (optional)
+### Day 4: Product Polish & Plugin System
+
+- Frontend for connecting sources, uploading CSVs
+- Dashboard showing data ingestion stats
+- Source schema visualizer
+- Swagger UI documentation
+- Plugin-based loader system (CSV, Excel, API)
 
 ---
 
