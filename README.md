@@ -33,12 +33,13 @@ Think of it as your data pipeline brain that cleans up incoming chaos into struc
 |--------|----------|-------------|
 | `GET` | `/` | Health check |
 | `POST` | `/connect-source` | Connects a source like `FakeSAP`, `FakeWorkday`, or CSV |
+| `GET` | `/get-data` | Returns normalized data from connected sources |
 | `GET` | `/list-connected-sources` | Lists all currently connected sources |
-| `GET` | `/get-data` | Returns normalized data from connected sources and persists them |
-| `GET` | `/normalised-data` | Normalizes all sources without storing |
-| `GET` | `/field-mapping/{source_name}` | Shows dynamic field mapping for a given source |
-| `POST` | `/upload-csv` | Upload CSV and normalize + store its data |
-| `GET` | `/employees` | Returns all employees from the database |
+| `GET` | `/normalised-data` | Normalizes all sources, not just the connected ones |
+| `GET` | `/employees` | Lists all employees from the database |
+| `POST` | `/employees` | Bulk insert of employee data |
+| `POST` | `/ask` | Ask natural language questions on employee data |
+| `GET` | `/logs` | Retrieve Q&A history |
 
 ---
 
@@ -62,19 +63,23 @@ Think of it as your data pipeline brain that cleans up incoming chaos into struc
 - Verified deduplication and idempotency
 - Polished and documented current implementation
 
+### Day 3: Natural Language Query Layer
+- Set up SQLite for persistent storage
+- Stored normalized employee data
+- Built `/employees` endpoint for DB access
+- Added `/ask` endpoint to answer questions via SQL
+- Logged all Q&A to database with `/logs`
+
 ---
 
 ## Upcoming Milestones
 
-### Day 3: Natural Language Query Layer
-- Build a LangGraph-based agent to handle user questions
-- Use LLM to translate natural language to SQL queries
-- Support questions like:
-  - "How many employees joined after Jan 2024?"
-  - "Show employees in the Marketing department"
-- Add `/ask` endpoint for querying employee data with natural language
-- Integrate SQLite with LangChain's SQL agent
-- Return results in conversational format
+### Day 4
+- Add filters and query parameters for `/employees` (e.g., by department, salary range)
+- Add analytics endpoints (e.g., headcount, average salary)
+- Integrate basic frontend dashboard (optional)
+- Add authentication and multi-user support (optional)
+- Store Q&A history with user context or memory (optional)
 
 ---
 
