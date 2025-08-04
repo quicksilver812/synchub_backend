@@ -75,3 +75,10 @@ Think of it as your data pipeline brain that cleans up incoming chaos into struc
 - Add `/ask` endpoint for querying employee data with natural language
 - Integrate SQLite with LangChain's SQL agent
 - Return results in conversational format
+
+---
+
+## Noted Issues
+
+- Discconect source route to be added
+- LLM invoked for every record as of now
