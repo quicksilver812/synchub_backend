@@ -29,7 +29,15 @@ from agent import sql_agent
 
 QALog.metadata.create_all(bind=engine)
 Employee.metadata.create_all(bind=engine)
-app = FastAPI()
+app = FastAPI(
+    title="SyncHub API",
+    description="A backend platform to connect enterprise data sources, auto-map employee records with LLMs, and normalize everything into a unified schema.",
+    version="1.0.0",
+    contact={
+        "name": "Allen Conroy Dsouza",
+        "email": "allendsouza812@gmail.com",
+    },
+)
 
 # In-memory storage for now
 connected_sources = []
@@ -54,11 +62,11 @@ def normalise_employee_record(record:dict, source_name:str) -> UnifiedEmployee:
     return UnifiedEmployee(**unified_kwargs)
 
 # --- Routes ---
-@app.get("/")
+@app.get("/", summary="Health check")
 def read_root():
     return{"message": "SyncHub API is alive!"}
 
-@app.post("/connect-source")
+@app.post("/connect-source", summary="Connect a data source")
 def connect_source(source: Source):
     if source.name not in LOADER_REGISTRY:
         raise HTTPException(status_code=404, detail = 'Source not supported yet')
@@ -74,7 +82,7 @@ def connect_source(source: Source):
     )
     return {"message": f"{source.name} connected successfully"}
 
-@app.delete("/disconnect-source")
+@app.delete("/disconnect-source", summary="Disconnect a data source")
 def disconnect_source(source: Source = Body(...)):
     global connected_sources
     initial_count = len(connected_sources)
@@ -88,7 +96,7 @@ def disconnect_source(source: Source = Body(...)):
     
     return {"message": f"{source.name} disconnected successfully"}
 
-@app.get("/get-data")
+@app.get("/get-data", summary="Get data from connected sources")
 def get_data():
     all_data = []
     db: Session = next(get_db())
@@ -121,11 +129,11 @@ def get_data():
     return {"sources_connected": connected_sources, "data": all_data}
 
 
-@app.get("/list-connected-sources")
+@app.get("/list-connected-sources", summary="List connected sources")
 def list_sources():
     return {"connected_sources": connected_sources}
 
-@app.get("/normalised-data")
+@app.get("/normalised-data", summary="Normalise data into a unified format")
 def get_normalised_data():
     all_records = []
     for source_name, loader in LOADER_REGISTRY.items():
@@ -139,7 +147,7 @@ def get_normalised_data():
     
     return {"normalized_records": all_records}
 
-@app.get("/field-mapping/{source_name}")
+@app.get("/field-mapping/{source_name}", summary="Get field mapping from original to normalised")
 def get_field_mapping(source_name: str):
     if source_name not in LOADER_REGISTRY:
         raise HTTPException(status_code=404, detail="Source not found.")
@@ -151,7 +159,7 @@ def get_field_mapping(source_name: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Mapping failed: {str(e)}")
     
-@app.post("/upload-csv")
+@app.post("/upload-csv", summary="Upload CSV files")
 async def upload_csv(source_name: str = Form(...), file: UploadFile = File(...), db: Session = Depends(get_db)):
     if file.content_type != 'text/csv':
         raise HTTPException(status_code=400, detail="Only CSV files are allowed")
@@ -191,7 +199,7 @@ async def upload_csv(source_name: str = Form(...), file: UploadFile = File(...),
     db.commit()
     return {"message": f"{saved} records processed and saved from {source_name}"}
 
-@app.get("/employees")
+@app.get("/employees", summary="Display all data records")
 def list_employees(db: Session = Depends(get_db)):
     try:
         employees = db.query(Employee).all()
@@ -199,7 +207,7 @@ def list_employees(db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-@app.post("/ask")
+@app.post("/ask", summary="Ask questions to the database")
 def ask_question(request: AskRequest, db: Session = Depends(get_db)):
     question = request.question.strip()
     
@@ -233,7 +241,7 @@ def ask_question(request: AskRequest, db: Session = Depends(get_db)):
             "error": str(e)
         }
     
-@app.get("/logs")
+@app.get("/logs", summary="Logs of prior queries and answers")
 def get_logs(db: Session = Depends(get_db)):
     logs = db.query(QALog).order_by(QALog.asked_at.desc()).limit(20).all()
     return {
@@ -248,7 +256,7 @@ def get_logs(db: Session = Depends(get_db)):
         ]
     }
 
-@app.get("/stats")
+@app.get("/stats", summary="Overall statistics of database")
 def get_stats(db: Session = Depends(get_db)):
     try:
         # Total employees
@@ -279,7 +287,7 @@ def get_stats(db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-@app.get("/source-schema/{source_name}")
+@app.get("/source-schema/{source_name}", summary="Check schema of source for debugging")
 def source_schema(source_name: str):
     if source_name not in LOADER_REGISTRY:
         raise HTTPException(status_code=404, detail="Source not found")
