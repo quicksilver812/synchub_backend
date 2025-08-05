@@ -6,7 +6,7 @@ import pandas as pd
 from io import StringIO
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import select
+from sqlalchemy import select, func
 from models import Employee
 from database import SessionLocal, get_db
 from langchain_core.messages import AIMessage, HumanMessage
@@ -247,3 +247,34 @@ def get_logs(db: Session = Depends(get_db)):
             for log in logs
         ]
     }
+
+@app.get("/stats")
+def get_stats(db: Session = Depends(get_db)):
+    try:
+        # Total employees
+        total_employees = db.query(func.count(Employee.id)).scalar()
+
+        # Count by department
+        dept_counts = db.query(Employee.department, func.count()).group_by(Employee.department).all()
+        department_stats = {dept or "Unknown": count for dept, count in dept_counts}
+
+        # Count by location
+        loc_counts = db.query(Employee.location, func.count()).group_by(Employee.location).all()
+        location_stats = {loc or "Unknown": count for loc, count in loc_counts}
+
+        # Count by connected source
+        source_stats = {
+            source["name"]: len(LOADER_REGISTRY[source["name"]].load())
+            for source in connected_sources
+        }
+
+        return {
+            "total_employees": total_employees,
+            "connected_sources": len(connected_sources),
+            "source_wise_records": source_stats,
+            "by_department": department_stats,
+            "by_location": location_stats,
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
