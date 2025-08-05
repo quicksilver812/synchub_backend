@@ -278,3 +278,19 @@ def get_stats(db: Session = Depends(get_db)):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get("/source-schema/{source_name}")
+def source_schema(source_name: str):
+    if source_name not in LOADER_REGISTRY:
+        raise HTTPException(status_code=404, detail="Source not found")
+
+    records = LOADER_REGISTRY[source_name].load()
+    if not records:
+        return {"source": source_name, "fields": [], "sample": None}
+
+    first = records[0]
+    return {
+        "source": source_name,
+        "fields": list(first.keys()),
+        "sample": first
+    }
