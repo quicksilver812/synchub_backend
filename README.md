@@ -70,21 +70,23 @@ Think of it as your data pipeline brain that cleans up incoming chaos into struc
 - Added `/ask` endpoint to answer questions via SQL
 - Logged all Q&A to database with `/logs`
 
+### Day 4: Product Polish & Plugin System
+
+- `/stats` showing data ingestion stats
+- Source schema visualizer
+- Swagger UI documentation
+- Plugin-based loader system (FakeSAP, FakeWorkday, CSV)
+
 ---
 
 ## Upcoming Milestones
 
-### Day 4: Product Polish & Plugin System
+### Day 5: Frontend
 
 - Frontend for connecting sources, uploading CSVs
-- Dashboard showing data ingestion stats
-- Source schema visualizer
-- Swagger UI documentation
-- Plugin-based loader system (CSV, Excel, API)
 
 ---
 
 ## Noted Issues
 
-- Discconect source route to be added
 - LLM invoked for every record as of now
