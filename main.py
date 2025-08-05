@@ -18,7 +18,7 @@ import loaders.sap_loader
 import loaders.workday_loader
 
 
-from loaders.loader_registry import LOADER_REGISTRY
+from loaders.loader_registry import loader_registry
 from loaders.csv_loader import CSVLoader
 from schema import UnifiedEmployee
 from field_mapper import fake_field_mappings
@@ -68,7 +68,7 @@ def read_root():
 
 @app.post("/connect-source", summary="Connect a data source")
 def connect_source(source: Source):
-    if source.name not in LOADER_REGISTRY:
+    if not loader_registry.exists(source.name):
         raise HTTPException(status_code=404, detail = 'Source not supported yet')
     
     for s in connected_sources:
@@ -103,7 +103,7 @@ def get_data():
 
     for source in connected_sources:
         src_name = source["name"]
-        source_data = LOADER_REGISTRY[src_name].load()
+        source_data = loader_registry.get(src_name).load()
 
         for record in source_data:
             unified = normalise_employee_record(record, src_name)
@@ -136,7 +136,7 @@ def list_sources():
 @app.get("/normalised-data", summary="Normalise data into a unified format")
 def get_normalised_data():
     all_records = []
-    for source_name, loader in LOADER_REGISTRY.items():
+    for source_name, loader in loader_registry.all().items():
         records = loader.load()
         for record in records:
             try:
@@ -149,10 +149,10 @@ def get_normalised_data():
 
 @app.get("/field-mapping/{source_name}", summary="Get field mapping from original to normalised")
 def get_field_mapping(source_name: str):
-    if source_name not in LOADER_REGISTRY:
+    if not loader_registry.exists(source_name):
         raise HTTPException(status_code=404, detail="Source not found.")
     
-    sample_record = LOADER_REGISTRY[source_name].load()[0]
+    sample_record = loader_registry.get(source_name).load()[0]
     try:
         mapping = get_dynamic_field_mapping(source_name, list(sample_record.keys()))
         return {"source": source_name, "field_mapping": mapping}
@@ -175,7 +175,7 @@ async def upload_csv(source_name: str = Form(...), file: UploadFile = File(...),
     # Create or update the CSV loader
     csv_loader = CSVLoader()
     csv_loader.set_data(source_name, rows)
-    LOADER_REGISTRY[source_name] = csv_loader
+    loader_registry.register(csv_loader)
 
     # LLM field mapping
     field_mapping = get_dynamic_field_mapping(source_name, list(rows[0].keys()))
@@ -272,7 +272,7 @@ def get_stats(db: Session = Depends(get_db)):
 
         # Count by connected source
         source_stats = {
-            source["name"]: len(LOADER_REGISTRY[source["name"]].load())
+            source["name"]: len(loader_registry.get(source["name"]).load())
             for source in connected_sources
         }
 
@@ -289,10 +289,10 @@ def get_stats(db: Session = Depends(get_db)):
     
 @app.get("/source-schema/{source_name}", summary="Check schema of source for debugging")
 def source_schema(source_name: str):
-    if source_name not in LOADER_REGISTRY:
+    if not loader_registry.exists(source_name):
         raise HTTPException(status_code=404, detail="Source not found")
 
-    records = LOADER_REGISTRY[source_name].load()
+    records = loader_registry.get(source_name).load()
     if not records:
         return {"source": source_name, "fields": [], "sample": None}
 

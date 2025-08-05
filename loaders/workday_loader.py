@@ -1,7 +1,6 @@
 from .base_loader import BaseLoader
-from .loader_registry import register_loader
+from .loader_registry import loader_registry
 
-@register_loader
 class FakeWorkdayLoader(BaseLoader):
     def name(self):
         return "FakeWorkday"
@@ -11,3 +10,5 @@ class FakeWorkdayLoader(BaseLoader):
             {"id":"001", "name":"Ramesh", "sal":12000},
             {"id":"002", "name":"Sita", "sal":10000}
         ]
+
+loader_registry.register(FakeWorkdayLoader())

@@ -1,7 +1,7 @@
 from .base_loader import BaseLoader
-from .loader_registry import register_loader
+from .loader_registry import loader_registry
 
-@register_loader
+
 class FakeSAPLoader(BaseLoader):
     def name(self):
         return "FakeSAP"
@@ -11,3 +11,5 @@ class FakeSAPLoader(BaseLoader):
             {"emp_id":"001", "emp_sal":12000, "emp_name":"Ramesh"},
             {"emp_id":"002", "emp_sal":10000, "emp_name":"Sita"}
         ]
+
+loader_registry.register(FakeSAPLoader())

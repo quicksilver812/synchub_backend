@@ -1,7 +1,6 @@
 from .base_loader import BaseLoader
-from .loader_registry import register_loader
+from .loader_registry import loader_registry
 
-@register_loader
 class CSVLoader(BaseLoader):
     def __init__(self):
         self._records = []
@@ -16,3 +15,5 @@ class CSVLoader(BaseLoader):
 
     def load(self):
         return self._records
+
+loader_registry.register(CSVLoader())
