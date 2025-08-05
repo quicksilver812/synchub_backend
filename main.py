@@ -14,8 +14,12 @@ from langchain_core.runnables import Runnable
 import csv
 import io
 
+import loaders.sap_loader
+import loaders.workday_loader
 
-from mock_sources import fake_data_sources
+
+from loaders.loader_registry import LOADER_REGISTRY
+from loaders.csv_loader import CSVLoader
 from schema import UnifiedEmployee
 from field_mapper import fake_field_mappings
 from llm_mapper import get_dynamic_field_mapping
@@ -56,7 +60,7 @@ def read_root():
 
 @app.post("/connect-source")
 def connect_source(source: Source):
-    if source.name not in fake_data_sources:
+    if source.name not in LOADER_REGISTRY:
         raise HTTPException(status_code=404, detail = 'Source not supported yet')
     
     for s in connected_sources:
@@ -91,7 +95,7 @@ def get_data():
 
     for source in connected_sources:
         src_name = source["name"]
-        source_data = fake_data_sources[src_name]
+        source_data = LOADER_REGISTRY[src_name].load()
 
         for record in source_data:
             unified = normalise_employee_record(record, src_name)
@@ -124,7 +128,8 @@ def list_sources():
 @app.get("/normalised-data")
 def get_normalised_data():
     all_records = []
-    for source_name, records in fake_data_sources.items():
+    for source_name, loader in LOADER_REGISTRY.items():
+        records = loader.load()
         for record in records:
             try:
                 unified = normalise_employee_record(record, source_name)
@@ -136,10 +141,10 @@ def get_normalised_data():
 
 @app.get("/field-mapping/{source_name}")
 def get_field_mapping(source_name: str):
-    if source_name not in fake_data_sources:
+    if source_name not in LOADER_REGISTRY:
         raise HTTPException(status_code=404, detail="Source not found.")
     
-    sample_record = fake_data_sources[source_name][0]
+    sample_record = LOADER_REGISTRY[source_name].load()[0]
     try:
         mapping = get_dynamic_field_mapping(source_name, list(sample_record.keys()))
         return {"source": source_name, "field_mapping": mapping}
@@ -159,6 +164,12 @@ async def upload_csv(source_name: str = Form(...), file: UploadFile = File(...),
     if not rows:
         raise HTTPException(status_code=400, detail="CSV is empty")
 
+    # Create or update the CSV loader
+    csv_loader = CSVLoader()
+    csv_loader.set_data(source_name, rows)
+    LOADER_REGISTRY[source_name] = csv_loader
+
+    # LLM field mapping
     field_mapping = get_dynamic_field_mapping(source_name, list(rows[0].keys()))
 
     saved = 0
@@ -169,7 +180,6 @@ async def upload_csv(source_name: str = Form(...), file: UploadFile = File(...),
 
         employee = Employee(**unified_kwargs)
 
-        # Upsert logic
         existing = db.query(Employee).filter_by(employee_id=employee.employee_id).first()
         if existing:
             for key, value in unified_kwargs.items():
