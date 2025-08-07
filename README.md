@@ -79,14 +79,6 @@ Think of it as your data pipeline brain that cleans up incoming chaos into struc
 
 ---
 
-## Upcoming Milestones
-
-### Day 5: Frontend
-
-- Frontend for connecting sources, uploading CSVs
-
----
-
 ## Noted Issues
 
 - LLM invoked for every record as of now
