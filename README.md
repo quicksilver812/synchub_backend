@@ -37,7 +37,6 @@ Think of it as your data pipeline brain that cleans up incoming chaos into struc
 | `GET` | `/list-connected-sources` | Lists all currently connected sources |
 | `GET` | `/normalised-data` | Normalizes all sources, not just the connected ones |
 | `GET` | `/employees` | Lists all employees from the database |
-| `POST` | `/employees` | Bulk insert of employee data |
 | `POST` | `/ask` | Ask natural language questions on employee data |
 | `GET` | `/logs` | Retrieve Q&A history |
 
